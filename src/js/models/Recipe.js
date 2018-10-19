@@ -29,9 +29,10 @@ export default class Recipe {
         this.servings = 4;
     }
 
-    parseIgredient() {
-        const unitsLong = ['tablespoon','tablespoons','ounce','ounces','teaspoon','teaspoons','cups','pounds'];
-        const unitShort = ['tbsp','tbsp','oz','oz','tsp','tsp','cup','lbs'];
+    parseIngredient() {
+        const unitsLong = ['tablespoons','tablespoon','ounces','ounce','teaspoons','teaspoon','cups','pounds'];
+        const unitShort = ['tbsps','tbsp','oz','oz','tsps','tsp','cup','lbs'];
+        const units = [...unitShort,'g','kg'];
 
         const newIngredients = this.ingredients.map(el => {
             let ingredient = el.toLowerCase();
@@ -41,9 +42,55 @@ export default class Recipe {
 
             ingredient = ingredient.replace(/ *\([^)]*\) */g,' ');
 
-            return ingredient;
+            const arrIng = ingredient.split(' ');
+            const unitIndex =  arrIng.findIndex(el2 => unitShort.includes(el2));
+
+
+
+            let objIng;
+
+            if(unitIndex > -1){
+
+                const arrCount = arrIng.slice(0,unitIndex);
+                let count;
+                if(arrCount.length === 1){
+                    count = eval(arrIng[0].replace('-','+'));
+                }else{
+                    count = eval(arrCount.join('+'));
+                }
+
+                objIng =  {
+                    count,
+                    unit: arrIng[unitIndex],
+                    ingredient: arrIng.slice(unitIndex + 1).join(' ')
+                }
+                
+            }else if(parseInt(arrIng[0],10)){
+                objIng = {
+                    count : parseInt(arrIng[0],10),
+                    unit : "",
+                    ingredient : arrIng.slice(1).join(' ')
+                };
+            }else if(unitIndex === -1){
+                objIng = {
+                    count : 1,
+                    unit: "",
+                    ingredient
+                };
+            }
+           
+            return objIng;
         });
 
         this.ingredients = newIngredients;
+    }
+
+    updateServings (type) {
+        const newServings = type === 'dec' ? this.servings - 1 : this.servings + 1;
+        this.ingredients.forEach(ing => {
+            ing.count *= (newServings / this.servings);
+        });
+
+        this.servings = newServings;
     }
 }
